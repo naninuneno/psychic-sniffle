@@ -37,44 +37,59 @@ app.initialize();
 
 // // // // // /* MY not bomberman STUFF */ // // // // //
 
+var gameMap = map.initialize();
+
 var lastBoomTime = 0;
 
 function getCurrentTime() {
     return new Date().getTime();
 }
 
-addPlayer();
-addBlocks();
-
-function addPlayer() {
-    var elem = document.createElement("img");
-    elem.src = "img/copyright.gif";
-    elem.setAttribute("height", "100%");
-    elem.setAttribute("width", "100%");
-    document.getElementById("playerPos").appendChild(elem);
-}
-
-function addBlocks() {
-    for (i = 1; i <= 10; i++) {
-        for (j = 1; j <= 25; j++) {
-            // random on whether particular cell will hold a block
-            if (Math.random() < 0.5) {
-                var cell = document
-                    .getElementById("row-" + i)
-                    .getElementsByClassName("cell-" + j)[0];
-
-                // don't generate block in player position    
-                if (!(cell.id.indexOf("playerPos") > -1)) {
-                    cell.className += " block";
-                }
-            }
-        }
-    }
-}
-
-/* listener for key presses */
+/* listener for key presses - for browser testing */
 window.addEventListener("keydown", doSomethingWithKeyInput, false);
- 
+
+var clickTimeout;
+document.addEventListener("mouseup", function() {
+    clearInterval(clickTimeout);
+});
+
+addSectionClickListener("topSection", 0, -1);
+addSectionClickListener("bottomSection", 0, 1);
+addSectionClickListener("leftSection", -1, 0);
+addSectionClickListener("rightSection", 1, 0);
+addBoomListener();
+
+function addSectionClickListener(sectionId, xMove, yMove) {
+    var section = document.getElementById(sectionId);
+
+    // single press
+    section.addEventListener("mousedown", function() {
+        move(xMove, yMove);
+    });
+
+    /* needed, but super buggy right now and a fucking headache
+    // sustained press to move multiple cells
+    section.addEventListener("mousedown", function() {
+        clickTimeout = setInterval(function() { 
+            move(xMove, yMove); 
+        }, 250) 
+    });*/
+
+    // stop sustained press on mouseup/mouseout
+    document.addEventListener("mouseup", function() {
+        clearInterval(clickTimeout);
+        return false;
+    });
+}
+
+function addBoomListener() {
+    document.getElementById("bombIcon")
+        .addEventListener("click", function() {
+            boom(3);
+        });
+}
+
+// for browser
 function doSomethingWithKeyInput(e) {
     switch(e.keyCode) {
         // left key pressed
@@ -100,25 +115,26 @@ function doSomethingWithKeyInput(e) {
     }   
 }
 
-function getPlayerPos() {
-    return document.getElementById("playerPos");
+function getplayer1Pos() {
+    return document.getElementById("player1Pos");
 }
 
 function move(xMove, yMove) {
 
-    var currentPlayerPos = getPlayerPos();
-    var newPlayerPos = getCellWithOffsetFromCurrentPos(xMove, yMove);
+    var currentplayer1Pos = getplayer1Pos();
+    var newplayer1Pos = getCellWithOffsetFromCurrentPos(xMove, yMove);
 
-    // don't allow movement into a block space
-    if (newPlayerPos != null &&
-        !(newPlayerPos.className.indexOf("block") > -1)) {
+    // don't allow movement into a block space or another player
+    if (newplayer1Pos != null &&
+        !(newplayer1Pos.className.indexOf("Block") > -1) &&
+        !(newplayer1Pos.id.indexOf("player") > -1)) {
         // remove current player position
-        currentPlayerPos.innerHTML = "";
-        currentPlayerPos.removeAttribute("id");
+        currentplayer1Pos.innerHTML = "";
+        currentplayer1Pos.removeAttribute("id");
 
         // add new player position        
-        newPlayerPos.setAttribute("id", "playerPos");
-        addPlayer();
+        newplayer1Pos.setAttribute("id", "player1Pos");
+        gameMap.generateSprite(1);
     }
 }
 
@@ -138,12 +154,82 @@ function boom(radius) {
     var minusOffset = radius - (2*radius);
 
     var booms = [];
-    for (i = minusOffset; i <= offset; i++) {
+
+    // 1 boom line for each direction, separate for loops so they can break on block collision
+    // left
+    for (i = -1; i >= minusOffset; i--) {
+        var boomPos = getCellWithOffsetFromCurrentPos(i, 0);
+        if (boomPos != null) {
+            var blockCollision = boomPos.className.indexOf("Block") > -1;
+            // booms blow up blocks
+            boomPos.className = boomPos.className.replace(" softBlock", "");
+
+            booms.push(boomPos);
+            boomPos.className += " boom";
+
+            if (blockCollision) {
+                break;
+            }
+        }
+    }
+
+    // up
+    for (i = -1; i >= minusOffset; i--) {
+        var boomPos = getCellWithOffsetFromCurrentPos(0, i);
+        if (boomPos != null) {
+            var blockCollision = boomPos.className.indexOf("Block") > -1;
+            // booms blow up blocks
+            boomPos.className = boomPos.className.replace(" softBlock", "");
+
+            booms.push(boomPos);
+            boomPos.className += " boom";
+
+            if (blockCollision) {
+                break;
+            }
+        }
+    }
+
+    // right
+    for (i = 1; i <= offset; i++) {
+        var boomPos = getCellWithOffsetFromCurrentPos(i, 0);
+        if (boomPos != null) {
+            var blockCollision = boomPos.className.indexOf("Block") > -1;
+            // booms blow up blocks
+            boomPos.className = boomPos.className.replace(" softBlock", "");
+
+            booms.push(boomPos);
+            boomPos.className += " boom";
+
+            if (blockCollision) {
+                break;
+            }
+        }
+    }
+
+    // down
+    for (i = 1; i <= offset; i++) {
+        var boomPos = getCellWithOffsetFromCurrentPos(0, i);
+        if (boomPos != null) {
+            var blockCollision = boomPos.className.indexOf("Block") > -1;
+            // booms blow up blocks
+            boomPos.className = boomPos.className.replace(" softBlock", "");
+
+            booms.push(boomPos);
+            boomPos.className += " boom";
+
+            if (blockCollision) {
+                break;
+            }
+        }
+    }
+
+    /*for (i = minusOffset; i <= offset; i++) {
         // horizontal
         var boomPosX = getCellWithOffsetFromCurrentPos(i, 0);
         if (boomPosX != null) {
             // booms blow up blocks
-            boomPosX.className = boomPosX.className.replace(" block", "");
+            boomPosX.className = boomPosX.className.replace(" softBlock", "");
 
             booms.push(boomPosX);
             boomPosX.className += " boom";
@@ -153,16 +239,26 @@ function boom(radius) {
         var boomPosY = getCellWithOffsetFromCurrentPos(0, i);
         if (boomPosY != null) {
             // booms blow up blocks
-            boomPosY.className = boomPosY.className.replace(" block", "");
+            boomPosY.className = boomPosY.className.replace(" softBlock", "");
 
             booms.push(boomPosY);
             boomPosY.className += " boom";
         }
-    }
+    }*/
 
+    // set icon inactive for a while and clear booms 
+    //  after time period
     lastBoomTime = getCurrentTime();
-
+    setIconInactive();
     setTimeout(function() { clearBooms(booms); }, 500);
+}
+
+function setIconInactive() {
+    var bombIcon = document.getElementById("bombIcon");
+    bombIcon.className += " bombIconInactive";
+    setTimeout(function() {
+        bombIcon.className = bombIcon.className.replace(" bombIconInactive", "");
+    }, 1500);
 }
 
 function clearBooms(booms) {
@@ -175,11 +271,11 @@ function clearBooms(booms) {
 // TODO : pass in the position of whatever is getting offset of 
     // would allow for enemy stuff etc.
 function getCellWithOffsetFromCurrentPos(x, y) {
-    var currentPlayerPos = getPlayerPos();
+    var currentplayer1Pos = getplayer1Pos();
 
     // find current row & cell
-    var rowStr = currentPlayerPos.parentElement.getAttribute("id").substring(4);
-    var cellClasses = currentPlayerPos.getAttribute("class").split(" ");
+    var rowStr = currentplayer1Pos.parentElement.getAttribute("id").substring(4);
+    var cellClasses = currentplayer1Pos.getAttribute("class").split(" ");
     var cellStr;
     cellClasses.forEach(function(entry) {
         if (entry.startsWith("cell-")) {

@@ -28,6 +28,59 @@ body {
     width:100%;
 }
 
+/* // // click zones // // */
+#topSection, #bottomSection, #leftSection, #rightSection, #centreSection, #bombIcon {
+    position: fixed;
+}
+
+#bombIcon {
+    bottom: 5%;
+    right: 5%;
+    height: 96px;
+    width: 96px;
+}
+
+.bombIconInactive {
+    opacity: 0.5;
+}
+
+
+#topSection, #bottomSection {
+    /* leave width at sides for left/right movement */
+    height: 50%;
+    width: 50%;
+    left: 25%;
+}
+
+#topSection, #leftSection, #rightSection {
+    top: 0;
+}
+
+#bottomSection {
+    bottom: 0;
+}
+
+#leftSection, #rightSection {
+    height: 100%;
+    width: 50%;
+}
+
+#leftSection {
+    left: 0;
+}
+
+#rightSection {
+    right: 0;
+}
+
+#centreSection {
+    height: 50%;
+    width: 50%;
+    top: 25%;
+    left: 25%;
+}
+/* */
+
 .gridRow {
     height: 10%;
     width: 100%;
@@ -45,10 +98,14 @@ body {
     border: 1px solid black;
 }
 
-#playerPos {
-    background-color: grey;
+#player1Pos, #player2Pos {
+    background-color: red;
     border-radius: 50px;
     border: 0;
+}
+
+#player2Pos {
+    background-color: blue;
 }
 
 .boom {
@@ -57,7 +114,7 @@ body {
     border: 0;
 }
 
-.block {
+.softBlock, .hardBlock {
     background-color: #333333;
     border-radius: 10px;
 
@@ -66,4 +123,8 @@ body {
     -moz-box-sizing: border-box;
     -webkit-box-sizing: border-box;
     border: 1px solid #1a1a1a;
+}
+
+.hardBlock {
+    background-color: black;
 }
