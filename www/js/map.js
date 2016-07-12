@@ -28,15 +28,15 @@ var map = {
 
         cell.setAttribute("id", "player"+playerno+"Pos");
 
-        this.generateSprite(playerno);
+        this.generateSprite("player"+playerno+"Pos");
 	},
 
-	generateSprite: function(playerno) {
+	generateSprite: function(playerId) {
 		var sprite = document.createElement("img");
 	    sprite.src = "img/copyright.gif";
 	    sprite.setAttribute("height", "100%");
 	    sprite.setAttribute("width", "100%");
-	    document.getElementById("player"+playerno+"Pos").appendChild(sprite);
+	    document.getElementById(playerId).appendChild(sprite);
 	},
 
 	// add 'soft' blocks - that the player can destroy
@@ -50,7 +50,7 @@ var map = {
 		                .getElementsByClassName("cell-" + j)[0];
 
 		            // don't generate block in player position    
-		            if (!(cell.id.indexOf("player1Pos") > -1)) {
+		            if (!(cell.id.indexOf("player") > -1)) {
 		                cell.className += " softBlock";
 		            }
 		        }

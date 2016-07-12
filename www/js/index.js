@@ -38,6 +38,7 @@ app.initialize();
 // // // // // /* MY not bomberman STUFF */ // // // // //
 
 var gameMap = map.initialize();
+aiPlayer.initialize("player2Pos");
 
 var lastBoomTime = 0;
 
@@ -64,14 +65,14 @@ function addSectionClickListener(sectionId, xMove, yMove) {
 
     // single press
     section.addEventListener("mousedown", function() {
-        move(xMove, yMove);
+        movePlayer1(xMove, yMove);
     });
 
     /* needed, but super buggy right now and a fucking headache
     // sustained press to move multiple cells
     section.addEventListener("mousedown", function() {
         clickTimeout = setInterval(function() { 
-            move(xMove, yMove); 
+            movePlayer1(xMove, yMove); 
         }, 250) 
     });*/
 
@@ -94,19 +95,19 @@ function doSomethingWithKeyInput(e) {
     switch(e.keyCode) {
         // left key pressed
         case 37:
-            move(-1, 0);
+            movePlayer1(-1, 0);
             break;
         // up key pressed
         case 38:
-            move(0, -1);
+            movePlayer1(0, -1);
             break;
         // right key pressed
         case 39:
-            move(1, 0);
+            movePlayer1(1, 0);
             break;
         // down key pressed
         case 40:
-            move(0, 1);
+            movePlayer1(0, 1);
             break; 
         // space key pressed - boom!
         case 32:
@@ -119,23 +120,33 @@ function getplayer1Pos() {
     return document.getElementById("player1Pos");
 }
 
-function move(xMove, yMove) {
+function movePlayer1(xMove, yMove) {
+    move(getplayer1Pos(), xMove, yMove, "player1Pos");
+}
 
-    var currentplayer1Pos = getplayer1Pos();
-    var newplayer1Pos = getCellWithOffsetFromCurrentPos(xMove, yMove);
+// todo: remove playerpos, use helper method like
+//  getPlayerPos(playerId) to get it
+function move(playerPos, xMove, yMove, playerId) {
+
+    var newplayer1Pos = getCellWithOffsetFromOtherCell(playerPos, xMove, yMove);
 
     // don't allow movement into a block space or another player
-    if (newplayer1Pos != null &&
-        !(newplayer1Pos.className.indexOf("Block") > -1) &&
-        !(newplayer1Pos.id.indexOf("player") > -1)) {
+    if (canMoveIntoCell(newplayer1Pos)) {
         // remove current player position
-        currentplayer1Pos.innerHTML = "";
-        currentplayer1Pos.removeAttribute("id");
+        playerPos.innerHTML = "";
+        playerPos.removeAttribute("id");
 
         // add new player position        
-        newplayer1Pos.setAttribute("id", "player1Pos");
-        gameMap.generateSprite(1);
+        newplayer1Pos.setAttribute("id", playerId);
+        gameMap.generateSprite(playerId);
     }
+}
+
+function canMoveIntoCell(cell) {
+    return (cell != null &&
+        !(cell.className.indexOf("Block") > -1) &&
+        !(cell.className.indexOf("placedBomb") > -1) &&
+        !(cell.id.indexOf("player") > -1));
 }
 
 function canBoom() {
@@ -151,6 +162,10 @@ function placeBomb(radius) {
     var bombPlacedPos = getplayer1Pos();
     bombPlacedPos.className += " placedBomb";
 
+    // deactivate ability to set bombs for a while
+    lastBoomTime = getCurrentTime();
+    setIconInactive();
+
     // let bomb sit for short while before boom
     setTimeout(function() { boom(radius, bombPlacedPos); }, 1500);
 }
@@ -164,7 +179,7 @@ function boom(radius, bombPlacedPos) {
 
     // 1 boom line for each direction, separate for loops so they can break on block collision
     // left
-    for (i = -1; i >= minusOffset; i--) {
+    for (i = 0; i >= minusOffset; i--) {
         var boomPos = getCellWithOffsetFromOtherCell(bombPlacedPos, i, 0);
         if (boomPos != null) {
             var blockCollision = boomPos.className.indexOf("Block") > -1;
@@ -233,10 +248,7 @@ function boom(radius, bombPlacedPos) {
 
     bombPlacedPos.className = bombPlacedPos.className.replace(" placedBomb", "");
 
-    // set icon inactive for a while and clear booms 
-    //  after time period
-    lastBoomTime = getCurrentTime();
-    setIconInactive();
+    // clear booms after short while
     setTimeout(function() { clearBooms(booms); }, 500);
 }
 
@@ -262,14 +274,8 @@ function getCellWithOffsetFromCurrentPos(x, y) {
 function getCellWithOffsetFromOtherCell(otherCell, x, y) {
 
     // find row & cell
-    var rowStr = otherCell.parentElement.getAttribute("id").substring(4);
-    var cellClasses = otherCell.getAttribute("class").split(" ");
-    var cellStr;
-    cellClasses.forEach(function(entry) {
-        if (entry.startsWith("cell-")) {
-            cellStr = entry.substring(5);
-        }
-    });
+    var rowStr = getRowNumber(otherCell);
+    var cellStr = getColumnNumber(otherCell);
 
     // move to next position
     var oldRow = parseInt(rowStr);
@@ -288,4 +294,19 @@ function getCellWithOffsetFromOtherCell(otherCell, x, y) {
     }
 
     return null;
+}
+
+function getRowNumber(cell) {
+    return cell.parentElement.getAttribute("id").substring(4);
+}
+
+function getColumnNumber(cell) {
+    var cellClasses = cell.getAttribute("class").split(" ");
+    var cellStr;
+    cellClasses.forEach(function(entry) {
+        if (entry.startsWith("cell-")) {
+            cellStr = entry.substring(5);
+        }
+    });
+    return cellStr;
 }
