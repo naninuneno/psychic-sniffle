@@ -108,6 +108,16 @@ body {
     background-color: blue;
 }
 
+.placedBomb {
+    border-radius: 50%;
+    background-color: black;
+    /* inner border */
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    border: 5px solid orange;
+}
+
 .boom {
     background-color: #ff6600;
     border-radius: 20px;

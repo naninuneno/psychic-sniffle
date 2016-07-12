@@ -85,7 +85,7 @@ function addSectionClickListener(sectionId, xMove, yMove) {
 function addBoomListener() {
     document.getElementById("bombIcon")
         .addEventListener("click", function() {
-            boom(3);
+            placeBomb(3);
         });
 }
 
@@ -110,7 +110,7 @@ function doSomethingWithKeyInput(e) {
             break; 
         // space key pressed - boom!
         case 32:
-            boom(3);
+            placeBomb(3);
             break;
     }   
 }
@@ -142,13 +142,20 @@ function canBoom() {
     return (getCurrentTime() - lastBoomTime) > 1500;
 }
 
-function boom(radius) {
-
+function placeBomb(radius) {
     // time restriction between booms
     if (!canBoom()) {
         return;
     }
 
+    var bombPlacedPos = getplayer1Pos();
+    bombPlacedPos.className += " placedBomb";
+
+    // let bomb sit for short while before boom
+    setTimeout(function() { boom(radius, bombPlacedPos); }, 1500);
+}
+
+function boom(radius, bombPlacedPos) {
     // e.g. 5 radius will give 5, -5 for coordinates
     var offset = radius;
     var minusOffset = radius - (2*radius);
@@ -158,7 +165,7 @@ function boom(radius) {
     // 1 boom line for each direction, separate for loops so they can break on block collision
     // left
     for (i = -1; i >= minusOffset; i--) {
-        var boomPos = getCellWithOffsetFromCurrentPos(i, 0);
+        var boomPos = getCellWithOffsetFromOtherCell(bombPlacedPos, i, 0);
         if (boomPos != null) {
             var blockCollision = boomPos.className.indexOf("Block") > -1;
             // booms blow up blocks
@@ -175,7 +182,7 @@ function boom(radius) {
 
     // up
     for (i = -1; i >= minusOffset; i--) {
-        var boomPos = getCellWithOffsetFromCurrentPos(0, i);
+        var boomPos = getCellWithOffsetFromOtherCell(bombPlacedPos, 0, i);
         if (boomPos != null) {
             var blockCollision = boomPos.className.indexOf("Block") > -1;
             // booms blow up blocks
@@ -192,7 +199,7 @@ function boom(radius) {
 
     // right
     for (i = 1; i <= offset; i++) {
-        var boomPos = getCellWithOffsetFromCurrentPos(i, 0);
+        var boomPos = getCellWithOffsetFromOtherCell(bombPlacedPos, i, 0);
         if (boomPos != null) {
             var blockCollision = boomPos.className.indexOf("Block") > -1;
             // booms blow up blocks
@@ -209,7 +216,7 @@ function boom(radius) {
 
     // down
     for (i = 1; i <= offset; i++) {
-        var boomPos = getCellWithOffsetFromCurrentPos(0, i);
+        var boomPos = getCellWithOffsetFromOtherCell(bombPlacedPos, 0, i);
         if (boomPos != null) {
             var blockCollision = boomPos.className.indexOf("Block") > -1;
             // booms blow up blocks
@@ -224,27 +231,7 @@ function boom(radius) {
         }
     }
 
-    /*for (i = minusOffset; i <= offset; i++) {
-        // horizontal
-        var boomPosX = getCellWithOffsetFromCurrentPos(i, 0);
-        if (boomPosX != null) {
-            // booms blow up blocks
-            boomPosX.className = boomPosX.className.replace(" softBlock", "");
-
-            booms.push(boomPosX);
-            boomPosX.className += " boom";
-        }
-
-        // vertical
-        var boomPosY = getCellWithOffsetFromCurrentPos(0, i);
-        if (boomPosY != null) {
-            // booms blow up blocks
-            boomPosY.className = boomPosY.className.replace(" softBlock", "");
-
-            booms.push(boomPosY);
-            boomPosY.className += " boom";
-        }
-    }*/
+    bombPlacedPos.className = bombPlacedPos.className.replace(" placedBomb", "");
 
     // set icon inactive for a while and clear booms 
     //  after time period
@@ -268,14 +255,15 @@ function clearBooms(booms) {
     });
 }
 
-// TODO : pass in the position of whatever is getting offset of 
-    // would allow for enemy stuff etc.
 function getCellWithOffsetFromCurrentPos(x, y) {
-    var currentplayer1Pos = getplayer1Pos();
+    return getCellWithOffsetFromOtherCell(getplayer1Pos(), x, y);
+}
 
-    // find current row & cell
-    var rowStr = currentplayer1Pos.parentElement.getAttribute("id").substring(4);
-    var cellClasses = currentplayer1Pos.getAttribute("class").split(" ");
+function getCellWithOffsetFromOtherCell(otherCell, x, y) {
+
+    // find row & cell
+    var rowStr = otherCell.parentElement.getAttribute("id").substring(4);
+    var cellClasses = otherCell.getAttribute("class").split(" ");
     var cellStr;
     cellClasses.forEach(function(entry) {
         if (entry.startsWith("cell-")) {
